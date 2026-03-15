@@ -188,47 +188,142 @@ terraform destroy
 
 ## Quick Reference: All Manual Configuration
 
-Below is a consolidated checklist of everything you must provide manually before the pipeline and infrastructure work end-to-end.
+Below is a consolidated checklist of **every single thing** you must provide manually, what it is, and exactly where to find or create it.
 
-### Dependencies (install before local development)
+### ✅ Master Checklist
 
-| Dependency | Minimum Version | Install Guide |
+Use this to track your progress — every box must be checked before the full pipeline works:
+
+- [ ] **Install** Terraform CLI (>= 1.0)
+- [ ] **Install** AWS CLI v2
+- [ ] **Create** an AWS account and IAM user with required permissions
+- [ ] **Obtain** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` from AWS IAM
+- [ ] **Choose** a strong `DB_PASSWORD` for the RDS database
+- [ ] **Add** all three GitHub Secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `DB_PASSWORD`)
+- [ ] **Create** the `production` GitHub Environment
+- [ ] **Create** the S3 bucket and DynamoDB table for Terraform remote state
+- [ ] **Uncomment** the `backend "s3"` block in `terraform/provider.tf` and fill in your project name
+- [ ] **Copy** `terraform.tfvars.example` → `terraform.tfvars` and set `db_password`
+
+---
+
+### 1 · Dependencies (install before local development)
+
+| # | What to install | Minimum Version | Where to get it |
+|---|---|---|---|
+| 1 | **Terraform CLI** | >= 1.0 | **macOS:** `brew install terraform` · **Linux/Windows:** download from [developer.hashicorp.com/terraform/install](https://developer.hashicorp.com/terraform/install) · Verify: `terraform version` |
+| 2 | **AWS CLI** | v2 recommended | **macOS:** `brew install awscli` · **Linux/Windows:** follow [docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) · Verify: `aws --version` |
+| 3 | **AWS Account** | — | Sign up at [aws.amazon.com](https://aws.amazon.com/) if you don't have one |
+
+---
+
+### 2 · AWS IAM User & Credentials (needed for both local dev and CI/CD)
+
+You need an **IAM access key pair** (`AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`). Here is exactly how to get them:
+
+1. Open [console.aws.amazon.com/iam](https://console.aws.amazon.com/iam/)
+2. In the left sidebar click **Users** → **Create user**
+3. Name it (e.g. `terraform-deployer`), click **Next**
+4. Choose **Attach policies directly** and add these managed policies:
+   - `AmazonVPCFullAccess`
+   - `ElasticLoadBalancingFullAccess`
+   - `AmazonEC2FullAccess`
+   - `AmazonRDSFullAccess`
+   - `AmazonS3FullAccess`
+   - `AmazonDynamoDBFullAccess` *(for state-lock table)*
+5. Click **Next** → **Create user**
+6. Click the new user name → **Security credentials** tab → **Create access key**
+7. Choose **Command Line Interface (CLI)**, check the confirmation, click **Next** → **Create access key**
+8. **Copy both values now** — the secret is shown only once:
+
+| Value | What it looks like | Where you just found it |
 |---|---|---|
-| [Terraform CLI](https://www.terraform.io/downloads) | >= 1.0 | `brew install terraform` / [official docs](https://developer.hashicorp.com/terraform/install) |
-| [AWS CLI](https://aws.amazon.com/cli/) | v2 (recommended) | `brew install awscli` / [official docs](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) |
-| AWS account with IAM credentials | — | [AWS Console](https://console.aws.amazon.com/) |
+| `AWS_ACCESS_KEY_ID` | `AKIAIOSFODNN7EXAMPLE` | Shown on the "Create access key" success page (step 8) |
+| `AWS_SECRET_ACCESS_KEY` | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` | Shown on the same page — **copy it immediately, it won't be shown again** |
 
-### Environment Variables (local development)
+---
 
-| Variable | Description | Example |
-|---|---|---|
-| `AWS_ACCESS_KEY_ID` | AWS IAM access key | `export AWS_ACCESS_KEY_ID="AKIA..."` |
-| `AWS_SECRET_ACCESS_KEY` | AWS IAM secret key | `export AWS_SECRET_ACCESS_KEY="wJalr..."` |
-| `TF_VAR_db_password` | RDS master password (passed to Terraform's `db_password` variable) | `export TF_VAR_db_password="MyStr0ng!Pass"` |
+### 3 · Database Password (`DB_PASSWORD`)
 
-> **Note:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are read directly by the AWS provider. `TF_VAR_db_password` is the Terraform convention for setting the `db_password` variable via the environment instead of a `.tfvars` file. Alternatively, set `db_password` in your local `terraform.tfvars` (see Quick Start above).
-
-### GitHub Secrets (CI/CD pipeline)
-
-| Secret Name | Maps To | Description |
-|---|---|---|
-| `AWS_ACCESS_KEY_ID` | AWS provider credentials | IAM access key for Terraform to manage AWS resources |
-| `AWS_SECRET_ACCESS_KEY` | AWS provider credentials | IAM secret key (paired with the access key above) |
-| `DB_PASSWORD` | `TF_VAR_db_password` | RDS master password used during plan and apply |
-
-### GitHub Environment (CI/CD apply gate)
-
-| Environment Name | Purpose |
+| What | Details |
 |---|---|
-| `production` | Required for the Apply job. Optionally enable **Required reviewers** for manual approval before each deployment. |
+| **What it is** | The master password for the RDS MySQL database created by Terraform |
+| **Where it comes from** | **You choose it yourself** — there is no AWS page to retrieve it |
+| **Rules** | Minimum 8 characters. Avoid `/`, `"`, `@`, and spaces (AWS RDS restriction) |
+| **Example** | `MyS3cur3Pa$$word!` |
 
-### One-Time AWS Resources (remote state backend)
+---
 
-Before the first CI/CD run, create these resources manually (see full commands in the [Terraform Remote Backend](#3-terraform-remote-backend-required-for-cicd) section above):
+### 4 · Environment Variables (local development only)
 
-| Resource | Purpose |
+Set these in your terminal before running `terraform plan` or `terraform apply` locally:
+
+| # | Variable Name | Value Source | How to set it |
+|---|---|---|---|
+| 1 | `AWS_ACCESS_KEY_ID` | From [step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd) | `export AWS_ACCESS_KEY_ID="AKIA..."` |
+| 2 | `AWS_SECRET_ACCESS_KEY` | From [step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd) | `export AWS_SECRET_ACCESS_KEY="wJalr..."` |
+| 3 | `TF_VAR_db_password` | The password you chose in [step 3](#3--database-password-db_password) | `export TF_VAR_db_password="MyS3cur3Pa$$word!"` |
+
+> **Note:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are read directly by the AWS provider. `TF_VAR_db_password` is the [Terraform convention](https://developer.hashicorp.com/terraform/cli/config/environment-variables#tf_var_name) for setting the `db_password` variable via the environment instead of a `.tfvars` file. Alternatively, set `db_password` in your local `terraform.tfvars` (see [Quick Start](#quick-start) above).
+
+---
+
+### 5 · GitHub Secrets (CI/CD pipeline)
+
+The GitHub Actions workflow reads these secrets at runtime. Here is exactly where to add them:
+
+1. Go to your repository on GitHub
+2. Click **Settings** (top menu) → **Secrets and variables** (left sidebar) → **Actions**
+3. Click **New repository secret**
+4. Add each secret one at a time:
+
+| # | Secret Name | What to paste | Where the value comes from |
+|---|---|---|---|
+| 1 | `AWS_ACCESS_KEY_ID` | Your IAM access key (e.g. `AKIA...`) | [Step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd), item 8 |
+| 2 | `AWS_SECRET_ACCESS_KEY` | Your IAM secret key (e.g. `wJalr...`) | [Step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd), item 8 |
+| 3 | `DB_PASSWORD` | Your chosen RDS password | [Step 3 above](#3--database-password-db_password) |
+
+> **How the workflow uses them:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are passed as env vars to every Terraform command. `DB_PASSWORD` is mapped to `TF_VAR_db_password` so Terraform receives it as the `db_password` variable. See `.github/workflows/terraform.yml` lines 57-65 and 92-101.
+
+---
+
+### 6 · GitHub Environment (CI/CD apply gate)
+
+The Apply job will **not run** unless a `production` environment exists:
+
+1. Go to your repository on GitHub
+2. Click **Settings** → **Environments** (left sidebar)
+3. Click **New environment**, name it **`production`**, click **Configure environment**
+4. *(Recommended)* Under **Environment protection rules**, enable **Required reviewers** and add yourself — this forces manual approval before every deployment
+
+| What | Where it is used |
 |---|---|
-| S3 bucket (`<PROJECT>-tfstate`) | Stores Terraform state file remotely |
-| DynamoDB table (`<PROJECT>-tflock`) | Provides state locking to prevent concurrent modifications |
+| `production` environment | `.github/workflows/terraform.yml` line 75: `environment: production` |
 
-After creating these, uncomment the `backend "s3"` block in `terraform/provider.tf` and replace `<YOUR_PROJECT_NAME>` with your actual project name.
+---
+
+### 7 · One-Time AWS Resources (remote state backend)
+
+Terraform state must be stored remotely so CI/CD runners can share it. Create these **once** before the first pipeline run:
+
+| # | Resource | Name Format | Purpose | Where to create it |
+|---|---|---|---|---|
+| 1 | **S3 bucket** | `<YOUR_PROJECT_NAME>-tfstate` | Stores `terraform.tfstate` remotely | AWS Console → S3 → Create bucket, **or** use the AWS CLI commands in [section 3 above](#3-terraform-remote-backend-required-for-cicd) |
+| 2 | **DynamoDB table** | `<YOUR_PROJECT_NAME>-tflock` | Prevents concurrent state modifications | AWS Console → DynamoDB → Create table (partition key: `LockID`, type `String`), **or** use the AWS CLI commands in [section 3 above](#3-terraform-remote-backend-required-for-cicd) |
+
+After creating them:
+1. Open `terraform/provider.tf`
+2. **Uncomment** lines 15-21 (the `backend "s3" { ... }` block)
+3. Replace every `<YOUR_PROJECT_NAME>` with your actual project name (e.g. `my-aws-project`)
+
+---
+
+### 8 · Terraform Variables File (local development)
+
+| Step | Command / Action |
+|---|---|
+| Copy the example file | `cp terraform/terraform.tfvars.example terraform/terraform.tfvars` |
+| Edit the one required value | Open `terraform/terraform.tfvars` and change `db_password = "CHANGE_ME_STRONG_PASSWORD"` to your chosen password from [step 3](#3--database-password-db_password) |
+| Optionally customise others | All other variables have sensible defaults — see the [Configuration Variables](#configuration-variables) table above |
+
+> **Security note:** `terraform.tfvars` is already in `.gitignore` so your password will never be committed.
