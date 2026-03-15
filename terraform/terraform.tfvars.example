@@ -38,6 +38,8 @@ db_instance_class = "db.t3.micro"
 db_name           = "appdb"
 db_username       = "admin"
 
-# REQUIRED — Replace with a strong password (min 8 chars, avoid /, ", @, spaces)
-# Alternatively, set via environment: export TF_VAR_db_password="YourPassword"
-db_password = "CHANGE_ME_STRONG_PASSWORD"
+# OPTIONAL — If left empty (or omitted), a secure 24-character random password
+# is generated automatically. You can retrieve it after apply with:
+#   terraform output -raw rds_password
+# To set your own password instead, uncomment the line below:
+# db_password = "YOUR_STRONG_PASSWORD"

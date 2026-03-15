@@ -39,7 +39,6 @@ Go to **Settings → Secrets and variables → Actions → New repository secret
 |---|---|---|
 | `AWS_ACCESS_KEY_ID` | AWS IAM access key | AWS Console → IAM → Users → Security credentials → Create access key |
 | `AWS_SECRET_ACCESS_KEY` | AWS IAM secret key | Generated alongside the access key above |
-| `DB_PASSWORD` | RDS database master password | Choose a strong password (min 8 chars, avoid `/`, `"`, `@`, spaces) |
 
 ### 2. GitHub Environment (Required for Apply)
 
@@ -120,11 +119,11 @@ The IAM user whose credentials are stored in GitHub Secrets needs permissions fo
    cp terraform.tfvars.example terraform.tfvars
    ```
 
-3. **Edit `terraform.tfvars`** and fill in your desired settings:
+3. **Edit `terraform.tfvars`** and optionally customise settings:
 
    ```hcl
    aws_region  = "us-east-1"
-   db_password = "YOUR_STRONG_DB_PASSWORD"
+   # db_password is auto-generated — no need to set it
    ```
 
 4. **Export AWS credentials as environment variables:**
@@ -156,6 +155,7 @@ The IAM user whose credentials are stored in GitHub Secrets needs permissions fo
    - ALB DNS name (to access your application)
    - RDS endpoint (for database connections)
    - S3 bucket name (for static assets)
+   - To retrieve the auto-generated RDS password: `terraform output -raw rds_password`
 
 ### Clean Up
 
@@ -182,7 +182,7 @@ terraform destroy
 | `db_instance_class` | RDS instance class | `db.t3.micro` |
 | `db_name` | Database name | `appdb` |
 | `db_username` | Database master username | `admin` |
-| `db_password` | Database master password | *(required — no default)* |
+| `db_password` | Database master password | *(auto-generated if not set — retrieve with `terraform output -raw rds_password`)* |
 
 ---
 
@@ -198,12 +198,13 @@ Use this to track your progress — every box must be checked before the full pi
 - [ ] **Install** AWS CLI v2
 - [ ] **Create** an AWS account and IAM user with required permissions
 - [ ] **Obtain** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` from AWS IAM
-- [ ] **Choose** a strong `DB_PASSWORD` for the RDS database
-- [ ] **Add** all three GitHub Secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `DB_PASSWORD`)
+- [ ] **Add** both GitHub Secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 - [ ] **Create** the `production` GitHub Environment
 - [ ] **Create** the S3 bucket and DynamoDB table for Terraform remote state
 - [ ] **Uncomment** the `backend "s3"` block in `terraform/provider.tf` and fill in your project name
-- [ ] **Copy** `terraform.tfvars.example` → `terraform.tfvars` and set `db_password`
+- [ ] **Copy** `terraform.tfvars.example` → `terraform.tfvars` (all values have sensible defaults)
+
+> **What's automatic:** The RDS database password (`db_password`) is **auto-generated** by Terraform using a secure random password. You do **not** need to choose or store it. After `terraform apply`, retrieve it with `terraform output -raw rds_password`.
 
 ---
 
@@ -243,14 +244,14 @@ You need an **IAM access key pair** (`AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KE
 
 ---
 
-### 3 · Database Password (`DB_PASSWORD`)
+### 3 · Database Password (`db_password`) — Auto-Generated ✅
 
 | What | Details |
 |---|---|
 | **What it is** | The master password for the RDS MySQL database created by Terraform |
-| **Where it comes from** | **You choose it yourself** — there is no AWS page to retrieve it |
-| **Rules** | Minimum 8 characters. Avoid `/`, `"`, `@`, and spaces (AWS RDS restriction) |
-| **Example** | `MyS3cur3Pa$$word!` |
+| **Where it comes from** | **Automatically generated** by Terraform using the `random_password` resource — you do NOT need to provide it |
+| **How to retrieve it** | After `terraform apply`: `terraform output -raw rds_password` |
+| **Override (optional)** | If you prefer your own password, set `db_password` in `terraform.tfvars` or `export TF_VAR_db_password="YourPassword"` |
 
 ---
 
@@ -262,9 +263,8 @@ Set these in your terminal before running `terraform plan` or `terraform apply` 
 |---|---|---|---|
 | 1 | `AWS_ACCESS_KEY_ID` | From [step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd) | `export AWS_ACCESS_KEY_ID="AKIA..."` |
 | 2 | `AWS_SECRET_ACCESS_KEY` | From [step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd) | `export AWS_SECRET_ACCESS_KEY="wJalr..."` |
-| 3 | `TF_VAR_db_password` | The password you chose in [step 3](#3--database-password-db_password) | `export TF_VAR_db_password="MyS3cur3Pa$$word!"` |
 
-> **Note:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are read directly by the AWS provider. `TF_VAR_db_password` is the [Terraform convention](https://developer.hashicorp.com/terraform/cli/config/environment-variables#tf_var_name) for setting the `db_password` variable via the environment instead of a `.tfvars` file. Alternatively, set `db_password` in your local `terraform.tfvars` (see [Quick Start](#quick-start) above).
+> **Note:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are read directly by the AWS provider. The `db_password` is auto-generated — you do not need to set `TF_VAR_db_password` unless you want to override the auto-generated value.
 
 ---
 
@@ -281,9 +281,8 @@ The GitHub Actions workflow reads these secrets at runtime. Here is exactly wher
 |---|---|---|---|
 | 1 | `AWS_ACCESS_KEY_ID` | Your IAM access key (e.g. `AKIA...`) | [Step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd), item 8 |
 | 2 | `AWS_SECRET_ACCESS_KEY` | Your IAM secret key (e.g. `wJalr...`) | [Step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd), item 8 |
-| 3 | `DB_PASSWORD` | Your chosen RDS password | [Step 3 above](#3--database-password-db_password) |
 
-> **How the workflow uses them:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are passed as env vars to every Terraform command in the Plan and Apply jobs. `DB_PASSWORD` is mapped to `TF_VAR_db_password` so Terraform receives it as the `db_password` variable. See the `env:` blocks in `.github/workflows/terraform.yml`.
+> **How the workflow uses them:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are passed as env vars to every Terraform command in the Plan and Apply jobs. The `db_password` is auto-generated by Terraform — no `DB_PASSWORD` secret is needed. See the `env:` blocks in `.github/workflows/terraform.yml`.
 
 ---
 
@@ -323,7 +322,6 @@ After creating them:
 | Step | Command / Action |
 |---|---|
 | Copy the example file | `cp terraform/terraform.tfvars.example terraform/terraform.tfvars` |
-| Edit the one required value | Open `terraform/terraform.tfvars` and change `db_password = "CHANGE_ME_STRONG_PASSWORD"` to your chosen password from [step 3](#3--database-password-db_password) |
-| Optionally customise others | All other variables have sensible defaults — see the [Configuration Variables](#configuration-variables) table above |
+| Ready to go! | All variables have sensible defaults. The RDS password is auto-generated. Optionally customise region, instance sizes, etc. — see the [Configuration Variables](#configuration-variables) table above |
 
-> **Security note:** `terraform.tfvars` is already in `.gitignore` so your password will never be committed.
+> **Security note:** `terraform.tfvars` is already in `.gitignore` so it will never be committed. The auto-generated database password is stored in Terraform state — protect your state file accordingly.

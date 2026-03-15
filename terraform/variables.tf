@@ -78,7 +78,8 @@ variable "db_username" {
 }
 
 variable "db_password" {
-  description = "Master password for the RDS database"
+  description = "Master password for the RDS database. Leave empty to auto-generate a secure random password."
   type        = string
+  default     = ""
   sensitive   = true
 }

@@ -42,3 +42,9 @@ output "s3_bucket_arn" {
   description = "ARN of the S3 bucket for static assets"
   value       = aws_s3_bucket.assets.arn
 }
+
+output "rds_password" {
+  description = "The RDS master password (auto-generated if not provided via db_password variable). Retrieve with: terraform output -raw rds_password"
+  value       = local.db_password
+  sensitive   = true
+}
