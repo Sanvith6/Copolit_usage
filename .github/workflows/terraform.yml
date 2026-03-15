@@ -72,7 +72,7 @@ jobs:
     name: Apply
     runs-on: ubuntu-latest
     needs: terraform-plan
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/Production' && github.event_name == 'push'
     defaults:
       run:
         working-directory: terraform
