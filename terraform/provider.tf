@@ -7,15 +7,24 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  # Remote backend for state persistence (required for CI/CD).
+  # Create the S3 bucket and DynamoDB table before enabling this block.
+  # See README.md for setup instructions.
+  #
+  # backend "s3" {
+  #   bucket         = "<YOUR_PROJECT_NAME>-tfstate"
+  #   key            = "terraform.tfstate"
+  #   region         = "us-east-1"
+  #   dynamodb_table = "<YOUR_PROJECT_NAME>-tflock"
+  #   encrypt        = true
+  # }
 }
 
-# Note: For production, prefer using environment variables (AWS_ACCESS_KEY_ID,
-# AWS_SECRET_ACCESS_KEY), AWS profiles, or IAM roles instead of passing
-# credentials as Terraform variables.
+# Credentials are provided via environment variables (AWS_ACCESS_KEY_ID,
+# AWS_SECRET_ACCESS_KEY) or IAM roles. Do not hardcode credentials.
 provider "aws" {
-  region     = var.aws_region
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
+  region = var.aws_region
 
   default_tags {
     tags = {
