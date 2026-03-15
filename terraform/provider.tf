@@ -13,16 +13,15 @@ terraform {
   }
 
   # Remote backend for state persistence (required for CI/CD).
-  # Create the S3 bucket and DynamoDB table before enabling this block.
-  # See README.md for setup instructions.
-  #
-  # backend "s3" {
-  #   bucket         = "<YOUR_PROJECT_NAME>-tfstate"
-  #   key            = "terraform.tfstate"
-  #   region         = "us-east-1"
-  #   dynamodb_table = "<YOUR_PROJECT_NAME>-tflock"
-  #   encrypt        = true
-  # }
+  # The S3 bucket and DynamoDB table are created automatically by
+  # scripts/setup-backend.sh (also runs in the CI/CD workflow).
+  backend "s3" {
+    bucket         = "my-aws-project-tfstate"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "my-aws-project-tflock"
+    encrypt        = true
+  }
 }
 
 # Credentials are provided via environment variables (AWS_ACCESS_KEY_ID,

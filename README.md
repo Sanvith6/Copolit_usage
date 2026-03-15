@@ -48,40 +48,19 @@ The Apply job uses a `production` environment for deployment protection.
 2. Name it **`production`**
 3. *(Recommended)* Enable **Required reviewers** so someone must manually approve each deployment
 
-### 3. Terraform Remote Backend (Required for CI/CD)
+### 3. Terraform Remote Backend — Automatic ✅
 
-The pipeline runs on ephemeral GitHub runners, so Terraform state **must** be stored remotely. Create these AWS resources **once** before the first pipeline run:
+The S3 bucket and DynamoDB table for Terraform state are **created automatically** by `scripts/setup-backend.sh`. The CI/CD pipeline runs this script before every `terraform init`, so **no manual setup is needed**.
+
+For **local development**, run the script once before your first `terraform init`:
 
 ```bash
-# Replace <YOUR_PROJECT_NAME> with your project name (e.g. my-aws-project)
-
-# Create S3 bucket for state
-aws s3api create-bucket \
-  --bucket <YOUR_PROJECT_NAME>-tfstate \
-  --region us-east-1
-
-aws s3api put-bucket-versioning \
-  --bucket <YOUR_PROJECT_NAME>-tfstate \
-  --versioning-configuration Status=Enabled
-
-aws s3api put-bucket-encryption \
-  --bucket <YOUR_PROJECT_NAME>-tfstate \
-  --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
-
-aws s3api put-public-access-block \
-  --bucket <YOUR_PROJECT_NAME>-tfstate \
-  --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
-
-# Create DynamoDB table for state locking
-aws dynamodb create-table \
-  --table-name <YOUR_PROJECT_NAME>-tflock \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --region us-east-1
+export AWS_ACCESS_KEY_ID="YOUR_AWS_ACCESS_KEY"
+export AWS_SECRET_ACCESS_KEY="YOUR_AWS_SECRET_KEY"
+./scripts/setup-backend.sh
 ```
 
-Then **uncomment** the `backend "s3"` block in `terraform/provider.tf` and replace `<YOUR_PROJECT_NAME>` with your actual project name.
+> The script is idempotent — it checks whether the resources exist and only creates them if they don't. You can run it as many times as you like.
 
 ### 4. AWS IAM Permissions
 
@@ -133,7 +112,13 @@ The IAM user whose credentials are stored in GitHub Secrets needs permissions fo
    export AWS_SECRET_ACCESS_KEY="YOUR_AWS_SECRET_KEY"
    ```
 
-5. **Initialize Terraform:**
+5. **Create the remote state backend (runs once, safe to repeat):**
+
+   ```bash
+   cd .. && ./scripts/setup-backend.sh && cd terraform
+   ```
+
+6. **Initialize Terraform:**
 
    ```bash
    terraform init
@@ -200,11 +185,12 @@ Use this to track your progress — every box must be checked before the full pi
 - [ ] **Obtain** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` from AWS IAM
 - [ ] **Add** both GitHub Secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 - [ ] **Create** the `production` GitHub Environment
-- [ ] **Create** the S3 bucket and DynamoDB table for Terraform remote state
-- [ ] **Uncomment** the `backend "s3"` block in `terraform/provider.tf` and fill in your project name
 - [ ] **Copy** `terraform.tfvars.example` → `terraform.tfvars` (all values have sensible defaults)
 
-> **What's automatic:** The RDS database password (`db_password`) is **auto-generated** by Terraform using a secure random password. You do **not** need to choose or store it. After `terraform apply`, retrieve it with `terraform output -raw rds_password`.
+> **What's automatic:**
+> - The **S3 bucket** and **DynamoDB table** for Terraform state are created automatically by `scripts/setup-backend.sh` (the CI/CD pipeline runs this before every init).
+> - The `backend "s3"` block in `provider.tf` is already configured — no uncommenting needed.
+> - The RDS database password (`db_password`) is **auto-generated** by Terraform. After `terraform apply`, retrieve it with `terraform output -raw rds_password`.
 
 ---
 
@@ -301,19 +287,22 @@ The Apply job will **not run** unless a `production` environment exists:
 
 ---
 
-### 7 · One-Time AWS Resources (remote state backend)
+### 7 · One-Time AWS Resources (remote state backend) — Automatic ✅
 
-Terraform state must be stored remotely so CI/CD runners can share it. Create these **once** before the first pipeline run:
+The S3 bucket and DynamoDB table are **created automatically** by `scripts/setup-backend.sh`. The CI/CD pipeline runs this script before every `terraform init`.
 
-| # | Resource | Name Format | Purpose | Where to create it |
+| # | Resource | Name | Purpose | Created by |
 |---|---|---|---|---|
-| 1 | **S3 bucket** | `<YOUR_PROJECT_NAME>-tfstate` | Stores `terraform.tfstate` remotely | AWS Console → S3 → Create bucket, **or** use the AWS CLI commands in the [Terraform Remote Backend](#3-terraform-remote-backend-required-for-cicd) section |
-| 2 | **DynamoDB table** | `<YOUR_PROJECT_NAME>-tflock` | Prevents concurrent state modifications | AWS Console → DynamoDB → Create table (partition key: `LockID`, type `String`), **or** use the AWS CLI commands in the [Terraform Remote Backend](#3-terraform-remote-backend-required-for-cicd) section |
+| 1 | **S3 bucket** | `my-aws-project-tfstate` | Stores `terraform.tfstate` remotely | `scripts/setup-backend.sh` (automatic) |
+| 2 | **DynamoDB table** | `my-aws-project-tflock` | Prevents concurrent state modifications | `scripts/setup-backend.sh` (automatic) |
 
-After creating them:
-1. Open `terraform/provider.tf`
-2. **Uncomment** lines 15-21 (the `backend "s3" { ... }` block)
-3. Replace every `<YOUR_PROJECT_NAME>` with your actual project name (e.g. `my-aws-project`)
+The `backend "s3"` block in `terraform/provider.tf` is already uncommented and configured. **No manual steps needed.**
+
+For local development, run the script once before your first `terraform init`:
+
+```bash
+./scripts/setup-backend.sh
+```
 
 ---
 
