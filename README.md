@@ -86,36 +86,36 @@ The IAM user whose credentials are stored in GitHub Secrets needs permissions fo
 
 ### Quick Start
 
-1. **Navigate to the terraform directory:**
-
-   ```bash
-   cd terraform
-   ```
-
-2. **Create your variable values file:**
-
-   ```bash
-   cp terraform.tfvars.example terraform.tfvars
-   ```
-
-3. **Edit `terraform.tfvars`** and optionally customise settings:
-
-   ```hcl
-   aws_region  = "us-east-1"
-   # db_password is auto-generated — no need to set it
-   ```
-
-4. **Export AWS credentials as environment variables:**
+1. **Export AWS credentials as environment variables:**
 
    ```bash
    export AWS_ACCESS_KEY_ID="YOUR_AWS_ACCESS_KEY"
    export AWS_SECRET_ACCESS_KEY="YOUR_AWS_SECRET_KEY"
    ```
 
-5. **Create the remote state backend (runs once, safe to repeat):**
+2. **Create the remote state backend (runs once, safe to repeat):**
 
    ```bash
-   cd .. && ./scripts/setup-backend.sh && cd terraform
+   ./scripts/setup-backend.sh
+   ```
+
+3. **Navigate to the terraform directory:**
+
+   ```bash
+   cd terraform
+   ```
+
+4. **Create your variable values file:**
+
+   ```bash
+   cp terraform.tfvars.example terraform.tfvars
+   ```
+
+5. **Edit `terraform.tfvars`** and optionally customise settings:
+
+   ```hcl
+   aws_region  = "us-east-1"
+   # db_password is auto-generated — no need to set it
    ```
 
 6. **Initialize Terraform:**
@@ -124,19 +124,19 @@ The IAM user whose credentials are stored in GitHub Secrets needs permissions fo
    terraform init
    ```
 
-6. **Preview the infrastructure changes:**
+7. **Preview the infrastructure changes:**
 
    ```bash
    terraform plan
    ```
 
-7. **Apply the configuration:**
+8. **Apply the configuration:**
 
    ```bash
    terraform apply
    ```
 
-8. **After apply completes**, the outputs will display:
+9. **After apply completes**, the outputs will display:
    - ALB DNS name (to access your application)
    - RDS endpoint (for database connections)
    - S3 bucket name (for static assets)

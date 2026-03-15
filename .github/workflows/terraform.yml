@@ -50,7 +50,8 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Create backend resources (S3 + DynamoDB) if missing
-        run: bash ../scripts/setup-backend.sh
+        working-directory: .
+        run: bash scripts/setup-backend.sh
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -84,7 +85,8 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Create backend resources (S3 + DynamoDB) if missing
-        run: bash ../scripts/setup-backend.sh
+        working-directory: .
+        run: bash scripts/setup-backend.sh
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

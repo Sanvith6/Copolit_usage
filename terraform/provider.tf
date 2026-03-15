@@ -15,6 +15,10 @@ terraform {
   # Remote backend for state persistence (required for CI/CD).
   # The S3 bucket and DynamoDB table are created automatically by
   # scripts/setup-backend.sh (also runs in the CI/CD workflow).
+  # NOTE: These values must match the defaults in scripts/setup-backend.sh.
+  # If you override BACKEND_BUCKET/BACKEND_TABLE/BACKEND_REGION there,
+  # update these values to match, or use `terraform init -reconfigure
+  # -backend-config="bucket=..." -backend-config="dynamodb_table=..."`.
   backend "s3" {
     bucket         = "my-aws-project-tfstate"
     key            = "terraform.tfstate"
