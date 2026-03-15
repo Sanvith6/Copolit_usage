@@ -172,11 +172,63 @@ terraform destroy
 | `aws_region` | AWS region | `us-east-1` |
 | `project_name` | Prefix for resource names | `my-aws-project` |
 | `vpc_cidr` | VPC CIDR block | `10.0.0.0/16` |
+| `public_subnet_cidrs` | CIDR blocks for public subnets | `["10.0.1.0/24", "10.0.2.0/24"]` |
+| `private_subnet_cidrs` | CIDR blocks for private subnets | `["10.0.3.0/24", "10.0.4.0/24"]` |
 | `instance_type` | EC2 instance type | `t3.micro` |
+| `ami_id` | AMI ID for EC2 instances (leave empty to use latest Amazon Linux 2023) | `""` |
 | `asg_min_size` | ASG minimum instances | `1` |
 | `asg_max_size` | ASG maximum instances | `3` |
 | `asg_desired_capacity` | ASG desired instances | `2` |
 | `db_instance_class` | RDS instance class | `db.t3.micro` |
 | `db_name` | Database name | `appdb` |
 | `db_username` | Database master username | `admin` |
-| `db_password` | Database master password | *(required)* |
+| `db_password` | Database master password | *(required — no default)* |
+
+---
+
+## Quick Reference: All Manual Configuration
+
+Below is a consolidated checklist of everything you must provide manually before the pipeline and infrastructure work end-to-end.
+
+### Dependencies (install before local development)
+
+| Dependency | Minimum Version | Install Guide |
+|---|---|---|
+| [Terraform CLI](https://www.terraform.io/downloads) | >= 1.0 | `brew install terraform` / [official docs](https://developer.hashicorp.com/terraform/install) |
+| [AWS CLI](https://aws.amazon.com/cli/) | v2 (recommended) | `brew install awscli` / [official docs](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) |
+| AWS account with IAM credentials | — | [AWS Console](https://console.aws.amazon.com/) |
+
+### Environment Variables (local development)
+
+| Variable | Description | Example |
+|---|---|---|
+| `AWS_ACCESS_KEY_ID` | AWS IAM access key | `export AWS_ACCESS_KEY_ID="AKIA..."` |
+| `AWS_SECRET_ACCESS_KEY` | AWS IAM secret key | `export AWS_SECRET_ACCESS_KEY="wJalr..."` |
+| `TF_VAR_db_password` | RDS master password (passed to Terraform's `db_password` variable) | `export TF_VAR_db_password="MyStr0ng!Pass"` |
+
+> **Note:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are read directly by the AWS provider. `TF_VAR_db_password` is the Terraform convention for setting the `db_password` variable via the environment instead of a `.tfvars` file. Alternatively, set `db_password` in your local `terraform.tfvars` (see Quick Start above).
+
+### GitHub Secrets (CI/CD pipeline)
+
+| Secret Name | Maps To | Description |
+|---|---|---|
+| `AWS_ACCESS_KEY_ID` | AWS provider credentials | IAM access key for Terraform to manage AWS resources |
+| `AWS_SECRET_ACCESS_KEY` | AWS provider credentials | IAM secret key (paired with the access key above) |
+| `DB_PASSWORD` | `TF_VAR_db_password` | RDS master password used during plan and apply |
+
+### GitHub Environment (CI/CD apply gate)
+
+| Environment Name | Purpose |
+|---|---|
+| `production` | Required for the Apply job. Optionally enable **Required reviewers** for manual approval before each deployment. |
+
+### One-Time AWS Resources (remote state backend)
+
+Before the first CI/CD run, create these resources manually (see full commands in the [Terraform Remote Backend](#3-terraform-remote-backend-required-for-cicd) section above):
+
+| Resource | Purpose |
+|---|---|
+| S3 bucket (`<PROJECT>-tfstate`) | Stores Terraform state file remotely |
+| DynamoDB table (`<PROJECT>-tflock`) | Provides state locking to prevent concurrent modifications |
+
+After creating these, uncomment the `backend "s3"` block in `terraform/provider.tf` and replace `<YOUR_PROJECT_NAME>` with your actual project name.
