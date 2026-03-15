@@ -74,6 +74,14 @@ resource "aws_security_group" "rds" {
     security_groups = [aws_security_group.ec2.id]
   }
 
+  egress {
+    description = "Allow outbound traffic within VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
   tags = {
     Name = "${var.project_name}-rds-sg"
   }

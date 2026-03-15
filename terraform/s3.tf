@@ -1,7 +1,7 @@
 # ---------- S3 Bucket for Static Assets ----------
 resource "aws_s3_bucket" "assets" {
   bucket_prefix = "${var.project_name}-assets-"
-  force_destroy = true
+  force_destroy = false
 
   tags = {
     Name = "${var.project_name}-assets"
