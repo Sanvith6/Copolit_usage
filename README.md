@@ -283,7 +283,7 @@ The GitHub Actions workflow reads these secrets at runtime. Here is exactly wher
 | 2 | `AWS_SECRET_ACCESS_KEY` | Your IAM secret key (e.g. `wJalr...`) | [Step 2 above](#2--aws-iam-user--credentials-needed-for-both-local-dev-and-cicd), item 8 |
 | 3 | `DB_PASSWORD` | Your chosen RDS password | [Step 3 above](#3--database-password-db_password) |
 
-> **How the workflow uses them:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are passed as env vars to every Terraform command. `DB_PASSWORD` is mapped to `TF_VAR_db_password` so Terraform receives it as the `db_password` variable. See `.github/workflows/terraform.yml` lines 57-65 and 92-101.
+> **How the workflow uses them:** `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are passed as env vars to every Terraform command in the Plan and Apply jobs. `DB_PASSWORD` is mapped to `TF_VAR_db_password` so Terraform receives it as the `db_password` variable. See the `env:` blocks in `.github/workflows/terraform.yml`.
 
 ---
 
@@ -308,8 +308,8 @@ Terraform state must be stored remotely so CI/CD runners can share it. Create th
 
 | # | Resource | Name Format | Purpose | Where to create it |
 |---|---|---|---|---|
-| 1 | **S3 bucket** | `<YOUR_PROJECT_NAME>-tfstate` | Stores `terraform.tfstate` remotely | AWS Console → S3 → Create bucket, **or** use the AWS CLI commands in [section 3 above](#3-terraform-remote-backend-required-for-cicd) |
-| 2 | **DynamoDB table** | `<YOUR_PROJECT_NAME>-tflock` | Prevents concurrent state modifications | AWS Console → DynamoDB → Create table (partition key: `LockID`, type `String`), **or** use the AWS CLI commands in [section 3 above](#3-terraform-remote-backend-required-for-cicd) |
+| 1 | **S3 bucket** | `<YOUR_PROJECT_NAME>-tfstate` | Stores `terraform.tfstate` remotely | AWS Console → S3 → Create bucket, **or** use the AWS CLI commands in the [Terraform Remote Backend](#3-terraform-remote-backend-required-for-cicd) section |
+| 2 | **DynamoDB table** | `<YOUR_PROJECT_NAME>-tflock` | Prevents concurrent state modifications | AWS Console → DynamoDB → Create table (partition key: `LockID`, type `String`), **or** use the AWS CLI commands in the [Terraform Remote Backend](#3-terraform-remote-backend-required-for-cicd) section |
 
 After creating them:
 1. Open `terraform/provider.tf`
