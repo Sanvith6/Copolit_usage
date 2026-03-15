@@ -1,0 +1,40 @@
+name: Terraform CI
+
+on:
+  push:
+    branches: [main, amazonpipeline]
+  pull_request:
+    branches: [main, amazonpipeline]
+
+jobs:
+  terraform:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.0"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        env:
+          # Provide dummy values for required variables that have no defaults.
+          # These are only needed for syntax/configuration validation, not for
+          # an actual plan or apply.
+          TF_VAR_aws_access_key: "validation-only"
+          TF_VAR_aws_secret_key: "validation-only"
+          TF_VAR_db_password: "validation-only"
+        run: terraform validate
