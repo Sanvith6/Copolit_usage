@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './StatusModal.css';
 
@@ -8,6 +8,16 @@ export default function StatusModal({ user, token, onClose, onStatusUpdated }) {
   const [status, setStatus] = useState(user?.status || '');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -31,7 +41,7 @@ export default function StatusModal({ user, token, onClose, onStatusUpdated }) {
   };
 
   return (
-    <div className="status-modal-overlay" onClick={onClose} role="presentation">
+    <div className="status-modal-overlay" onClick={onClose}>
       <div className="status-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Edit status">
         <h3>Edit Status</h3>
         {error && <div className="status-error">{error}</div>}
