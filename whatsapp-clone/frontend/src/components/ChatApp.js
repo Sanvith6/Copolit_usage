@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import Sidebar from './Sidebar';
@@ -8,7 +8,17 @@ import './ChatApp.css';
 const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
-export default function ChatApp({ user, token, onLogout }) {
+const updateParticipantStatus = (participant, userId, status) => {
+  if (!participant) return participant;
+  const participantId = participant._id || participant.id;
+  if (participantId !== userId) return participant;
+  return { ...participant, status };
+};
+
+const updateParticipants = (participants, userId, status) =>
+  participants.map(participant => updateParticipantStatus(participant, userId, status));
+
+export default function ChatApp({ user, token, onLogout, onUpdateUser }) {
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -16,12 +26,31 @@ export default function ChatApp({ user, token, onLogout }) {
   const [typingUsers, setTypingUsers] = useState({});
   const socketRef = useRef(null);
 
+  const applyStatusUpdate = useCallback((userId, status) => {
+    if (!userId) return;
+    setChats(prev => prev.map(chat => ({
+      ...chat,
+      participants: updateParticipants(chat.participants, userId, status)
+    })));
+    setSelectedChat(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        participants: updateParticipants(prev.participants, userId, status)
+      };
+    });
+  }, []);
+
   useEffect(() => {
     const socket = io(SOCKET_URL);
     socketRef.current = socket;
     socket.emit('join', user.id);
 
     socket.on('online_users', (users) => setOnlineUsers(users));
+
+    socket.on('status_updated', ({ userId, status }) => {
+      applyStatusUpdate(userId, status);
+    });
 
     socket.on('receive_message', (message) => {
       setMessages(prev => {
@@ -42,7 +71,7 @@ export default function ChatApp({ user, token, onLogout }) {
     });
 
     return () => socket.disconnect();
-  }, [user.id]);
+  }, [user.id, applyStatusUpdate]);
 
   useEffect(() => {
     fetchChats();
@@ -101,6 +130,16 @@ export default function ChatApp({ user, token, onLogout }) {
 
   const getOtherParticipant = (chat) => chat.participants.find(p => p._id !== user.id);
 
+  const handleStatusUpdated = (updatedUser) => {
+    if (!updatedUser) return;
+    onUpdateUser?.(updatedUser);
+    const updatedId = updatedUser.id || updatedUser._id;
+    if (socketRef.current && updatedId) {
+      socketRef.current.emit('update_status', { userId: updatedId, status: updatedUser.status });
+    }
+    applyStatusUpdate(updatedId, updatedUser.status);
+  };
+
   return (
     <div className="chat-app">
       <Sidebar
@@ -113,6 +152,7 @@ export default function ChatApp({ user, token, onLogout }) {
         token={token}
         onlineUsers={onlineUsers}
         getOtherParticipant={getOtherParticipant}
+        onStatusUpdated={handleStatusUpdated}
       />
       <ChatWindow
         user={user}

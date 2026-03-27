@@ -77,6 +77,11 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('update_status', (data) => {
+    if (!data?.userId) return;
+    io.emit('status_updated', { userId: data.userId, status: data.status });
+  });
+
   socket.on('disconnect', () => {
     Object.keys(onlineUsers).forEach(uid => {
       if (onlineUsers[uid] === socket.id) delete onlineUsers[uid];

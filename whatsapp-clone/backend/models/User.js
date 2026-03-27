@@ -1,12 +1,15 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const DEFAULT_STATUS = 'Hey there! I am using WhatsApp.';
+const STATUS_MAX_LENGTH = 140;
+
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   avatar: { type: String, default: '' },
-  status: { type: String, default: 'Hey there! I am using WhatsApp.' },
+  status: { type: String, default: DEFAULT_STATUS },
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {
@@ -19,4 +22,7 @@ userSchema.methods.comparePassword = async function(password) {
   return bcrypt.compare(password, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+User.DEFAULT_STATUS = DEFAULT_STATUS;
+User.STATUS_MAX_LENGTH = STATUS_MAX_LENGTH;
+module.exports = User;

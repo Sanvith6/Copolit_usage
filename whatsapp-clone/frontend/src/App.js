@@ -32,13 +32,18 @@ function App() {
     localStorage.removeItem('wa_user');
   };
 
+  const handleUserUpdate = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem('wa_user', JSON.stringify(updatedUser));
+  };
+
   if (!user) {
     return showRegister
       ? <Register onLogin={handleLogin} onSwitch={() => setShowRegister(false)} />
       : <Login onLogin={handleLogin} onSwitch={() => setShowRegister(true)} />;
   }
 
-  return <ChatApp user={user} token={token} onLogout={handleLogout} />;
+  return <ChatApp user={user} token={token} onLogout={handleLogout} onUpdateUser={handleUserUpdate} />;
 }
 
 export default App;
