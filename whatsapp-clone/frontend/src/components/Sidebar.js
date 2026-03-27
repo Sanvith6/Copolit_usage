@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import StatusModal from './StatusModal';
 import './Sidebar.css';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-export default function Sidebar({ user, chats, selectedChat, onSelectChat, onStartChat, onLogout, token, onlineUsers, getOtherParticipant }) {
+export default function Sidebar({ user, chats, selectedChat, onSelectChat, onStartChat, onLogout, token, onlineUsers, getOtherParticipant, onStatusUpdated }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   useEffect(() => {
     axios.get(`${API}/auth/users`, { headers: { Authorization: `Bearer ${token}` } })
@@ -49,6 +51,13 @@ export default function Sidebar({ user, chats, selectedChat, onSelectChat, onSta
           <button className="icon-btn" onClick={() => setShowSearch(!showSearch)} title="New chat">🔍</button>
           <button className="icon-btn" onClick={onLogout} title="Logout">⏏</button>
         </div>
+      </div>
+      <div className="sidebar-status">
+        <div className="status-text">
+          <span className="status-label">Status</span>
+          <span className="status-value">{user.status || 'Hey there! I am using WhatsApp.'}</span>
+        </div>
+        <button className="icon-btn status-edit-btn" onClick={() => setShowStatusModal(true)} title="Edit status">✏️</button>
       </div>
 
       {/* Search */}
@@ -125,6 +134,17 @@ export default function Sidebar({ user, chats, selectedChat, onSelectChat, onSta
           })
         )}
       </div>
+      {showStatusModal && (
+        <StatusModal
+          user={user}
+          token={token}
+          onClose={() => setShowStatusModal(false)}
+          onStatusUpdated={(updatedUser) => {
+            onStatusUpdated?.(updatedUser);
+            setShowStatusModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

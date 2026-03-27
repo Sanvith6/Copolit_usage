@@ -1,0 +1,96 @@
+.status-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.status-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  width: min(420px, 90%);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.status-modal h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: #111b21;
+}
+
+.status-modal textarea {
+  width: 100%;
+  min-height: 90px;
+  border: 1px solid #e9edef;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  color: #111b21;
+}
+
+.status-modal textarea:focus {
+  border-color: #25d366;
+}
+
+.status-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 12px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #667781;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-buttons button {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modal-buttons button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-buttons button:first-child {
+  background: #f0f2f5;
+  color: #111b21;
+}
+
+.save-btn {
+  background: #25d366;
+  color: #fff;
+}
+
+.save-btn:hover {
+  background: #1fb85c;
+}
+
+.status-error {
+  background: #ffe9e9;
+  color: #b00020;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}

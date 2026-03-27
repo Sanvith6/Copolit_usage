@@ -8,7 +8,7 @@ import './ChatApp.css';
 const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
-export default function ChatApp({ user, token, onLogout }) {
+export default function ChatApp({ user, token, onLogout, onUpdateUser }) {
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -22,6 +22,27 @@ export default function ChatApp({ user, token, onLogout }) {
     socket.emit('join', user.id);
 
     socket.on('online_users', (users) => setOnlineUsers(users));
+
+    socket.on('status_updated', ({ userId, status }) => {
+      if (!userId) return;
+      const updateParticipant = (participant) => {
+        if (!participant) return participant;
+        const participantId = participant._id || participant.id;
+        if (participantId !== userId) return participant;
+        return { ...participant, status };
+      };
+      setChats(prev => prev.map(chat => ({
+        ...chat,
+        participants: chat.participants.map(updateParticipant)
+      })));
+      setSelectedChat(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          participants: prev.participants.map(updateParticipant)
+        };
+      });
+    });
 
     socket.on('receive_message', (message) => {
       setMessages(prev => {
@@ -101,6 +122,32 @@ export default function ChatApp({ user, token, onLogout }) {
 
   const getOtherParticipant = (chat) => chat.participants.find(p => p._id !== user.id);
 
+  const handleStatusUpdated = (updatedUser) => {
+    if (!updatedUser) return;
+    onUpdateUser?.(updatedUser);
+    const updatedId = updatedUser.id || updatedUser._id;
+    if (socketRef.current && updatedId) {
+      socketRef.current.emit('update_status', { userId: updatedId, status: updatedUser.status });
+    }
+    const updateParticipant = (participant) => {
+      if (!participant) return participant;
+      const participantId = participant._id || participant.id;
+      if (participantId !== updatedId) return participant;
+      return { ...participant, status: updatedUser.status };
+    };
+    setChats(prev => prev.map(chat => ({
+      ...chat,
+      participants: chat.participants.map(updateParticipant)
+    })));
+    setSelectedChat(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        participants: prev.participants.map(updateParticipant)
+      };
+    });
+  };
+
   return (
     <div className="chat-app">
       <Sidebar
@@ -113,6 +160,7 @@ export default function ChatApp({ user, token, onLogout }) {
         token={token}
         onlineUsers={onlineUsers}
         getOtherParticipant={getOtherParticipant}
+        onStatusUpdated={handleStatusUpdated}
       />
       <ChatWindow
         user={user}

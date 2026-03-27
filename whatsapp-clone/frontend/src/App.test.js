@@ -3,6 +3,6 @@ import App from './App';
 
 test('renders login page by default', () => {
   render(<App />);
-  expect(screen.getByText(/WhatsApp/i)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { level: 1, name: 'WhatsApp' })).toBeInTheDocument();
   expect(screen.getByText(/Sign in to WhatsApp/i)).toBeInTheDocument();
 });
