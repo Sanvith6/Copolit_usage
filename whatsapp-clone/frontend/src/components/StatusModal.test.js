@@ -48,3 +48,20 @@ test('saves status updates', async () => {
   await waitFor(() => expect(onStatusUpdated).toHaveBeenCalledWith({ id: 'user-1', status: 'Updated status' }));
   expect(onClose).toHaveBeenCalled();
 });
+
+test('shows an error when status update fails', async () => {
+  axios.put.mockRejectedValueOnce({ response: { data: { message: 'Update failed' } } });
+
+  render(
+    <StatusModal
+      user={{ status: 'Old status' }}
+      token="token"
+      onClose={() => {}}
+      onStatusUpdated={() => {}}
+    />
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+  expect(await screen.findByText('Update failed')).toBeInTheDocument();
+});

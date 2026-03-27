@@ -39,8 +39,7 @@ router.put('/status', auth, async (req, res) => {
     if (trimmedStatus.length > 140) {
       return res.status(400).json({ message: 'Status must be 140 characters or less' });
     }
-    const defaultStatus = User.schema.path('status').defaultValue;
-    const nextStatus = trimmedStatus || defaultStatus;
+    const nextStatus = trimmedStatus || User.DEFAULT_STATUS;
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { status: nextStatus },
