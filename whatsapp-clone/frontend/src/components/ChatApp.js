@@ -8,6 +8,16 @@ import './ChatApp.css';
 const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
+const updateParticipantStatus = (participant, userId, status) => {
+  if (!participant) return participant;
+  const participantId = participant._id || participant.id;
+  if (participantId !== userId) return participant;
+  return { ...participant, status };
+};
+
+const updateParticipants = (participants, userId, status) =>
+  participants.map(participant => updateParticipantStatus(participant, userId, status));
+
 export default function ChatApp({ user, token, onLogout, onUpdateUser }) {
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -18,21 +28,15 @@ export default function ChatApp({ user, token, onLogout, onUpdateUser }) {
 
   const applyStatusUpdate = useCallback((userId, status) => {
     if (!userId) return;
-    const updateParticipant = (participant) => {
-      if (!participant) return participant;
-      const participantId = participant._id || participant.id;
-      if (participantId !== userId) return participant;
-      return { ...participant, status };
-    };
     setChats(prev => prev.map(chat => ({
       ...chat,
-      participants: chat.participants.map(updateParticipant)
+      participants: updateParticipants(chat.participants, userId, status)
     })));
     setSelectedChat(prev => {
       if (!prev) return prev;
       return {
         ...prev,
-        participants: prev.participants.map(updateParticipant)
+        participants: updateParticipants(prev.participants, userId, status)
       };
     });
   }, []);

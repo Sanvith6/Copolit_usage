@@ -28,7 +28,7 @@ export default function StatusModal({ user, token, onClose, onStatusUpdated }) {
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const updatedUser = res.data?.user || res.data;
+      const updatedUser = res.data?.user;
       if (updatedUser) {
         onStatusUpdated?.(updatedUser);
       }

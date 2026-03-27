@@ -49,6 +49,31 @@ test('saves status updates', async () => {
   expect(onClose).toHaveBeenCalled();
 });
 
+test('sends status update even if unchanged', async () => {
+  const onStatusUpdated = jest.fn();
+  axios.put.mockResolvedValueOnce({
+    data: { user: { id: 'user-1', status: 'Same status' } }
+  });
+
+  render(
+    <StatusModal
+      user={{ status: 'Same status' }}
+      token="token"
+      onClose={() => {}}
+      onStatusUpdated={onStatusUpdated}
+    />
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+  await waitFor(() => expect(axios.put).toHaveBeenCalled());
+  expect(axios.put).toHaveBeenLastCalledWith(
+    'http://localhost:5000/api/auth/status',
+    { status: 'Same status' },
+    { headers: { Authorization: 'Bearer token' } }
+  );
+});
+
 test('shows an error when status update fails', async () => {
   axios.put.mockRejectedValueOnce({ response: { data: { message: 'Update failed' } } });
 
@@ -64,4 +89,21 @@ test('shows an error when status update fails', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
   expect(await screen.findByText('Update failed')).toBeInTheDocument();
+});
+
+test('shows fallback error when response lacks message', async () => {
+  axios.put.mockRejectedValueOnce({});
+
+  render(
+    <StatusModal
+      user={{ status: 'Old status' }}
+      token="token"
+      onClose={() => {}}
+      onStatusUpdated={() => {}}
+    />
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+  expect(await screen.findByText('Failed to update status')).toBeInTheDocument();
 });
