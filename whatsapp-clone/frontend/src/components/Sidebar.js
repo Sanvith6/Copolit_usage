@@ -57,7 +57,7 @@ export default function Sidebar({ user, chats, selectedChat, onSelectChat, onSta
           <span className="status-label">Status</span>
           <span className="status-value">{user.status || 'Set a status...'}</span>
         </div>
-        <button className="icon-btn status-edit-btn" onClick={() => setShowStatusModal(true)} title="Edit status">✏️</button>
+        <button className="icon-btn status-edit-btn" onClick={() => setShowStatusModal(true)} title="Edit status" aria-label="Edit status">✏️</button>
       </div>
 
       {/* Search */}

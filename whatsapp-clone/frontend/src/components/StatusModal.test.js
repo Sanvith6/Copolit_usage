@@ -40,6 +40,11 @@ test('saves status updates', async () => {
   fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Updated status' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
+  expect(axios.put).toHaveBeenCalledWith(
+    'http://localhost:5000/api/auth/status',
+    { status: 'Updated status' },
+    { headers: { Authorization: 'Bearer token' } }
+  );
   await waitFor(() => expect(onStatusUpdated).toHaveBeenCalledWith({ id: 'user-1', status: 'Updated status' }));
   expect(onClose).toHaveBeenCalled();
 });

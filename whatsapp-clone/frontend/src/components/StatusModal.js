@@ -42,8 +42,11 @@ export default function StatusModal({ user, token, onClose, onStatusUpdated }) {
 
   return (
     <div className="status-modal-overlay" onClick={onClose}>
-      <div className="status-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Edit status">
-        <h3>Edit Status</h3>
+      <div className="status-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="status-modal-title">
+        <div className="status-modal-header">
+          <h3 id="status-modal-title">Edit Status</h3>
+          <button type="button" className="close-btn" onClick={onClose} aria-label="Close status editor">✕</button>
+        </div>
         {error && <div className="status-error">{error}</div>}
         <textarea
           value={status}

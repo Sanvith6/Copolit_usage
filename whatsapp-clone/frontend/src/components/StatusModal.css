@@ -19,9 +19,29 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
+.status-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 .status-modal h3 {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 18px;
+  color: #111b21;
+}
+
+.close-btn {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  color: #54656f;
+}
+
+.close-btn:hover {
   color: #111b21;
 }
 
