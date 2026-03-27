@@ -50,6 +50,7 @@ export default function StatusModal({ user, token, onClose, onStatusUpdated }) {
           onChange={(e) => setStatus(e.target.value)}
           placeholder="Your status..."
           maxLength={140}
+          aria-label="Status message"
         />
         <div className="status-footer">
           <span className="char-count">{status.length}/140</span>

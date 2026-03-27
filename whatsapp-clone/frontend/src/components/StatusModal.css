@@ -82,7 +82,7 @@
   color: #fff;
 }
 
-.save-btn:hover {
+.save-btn:not(:disabled):hover {
   background: #1fb85c;
 }
 

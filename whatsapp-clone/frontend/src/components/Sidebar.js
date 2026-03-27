@@ -55,7 +55,7 @@ export default function Sidebar({ user, chats, selectedChat, onSelectChat, onSta
       <div className="sidebar-status">
         <div className="status-text">
           <span className="status-label">Status</span>
-          <span className="status-value">{user.status || 'Hey there! I am using WhatsApp.'}</span>
+          <span className="status-value">{user.status || 'Set a status...'}</span>
         </div>
         <button className="icon-btn status-edit-btn" onClick={() => setShowStatusModal(true)} title="Edit status">✏️</button>
       </div>
