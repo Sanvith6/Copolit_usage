@@ -36,8 +36,8 @@ router.put('/status', auth, async (req, res) => {
       return res.status(400).json({ message: 'Invalid status' });
     }
     const trimmedStatus = status.trim();
-    if (trimmedStatus.length > 140) {
-      return res.status(400).json({ message: 'Status must be 140 characters or less' });
+    if (trimmedStatus.length > User.STATUS_MAX_LENGTH) {
+      return res.status(400).json({ message: `Status must be ${User.STATUS_MAX_LENGTH} characters or less` });
     }
     const nextStatus = trimmedStatus || User.DEFAULT_STATUS;
     const user = await User.findByIdAndUpdate(

@@ -1,3 +1,5 @@
+jest.mock('axios');
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import axios from 'axios';
 import StatusModal from './StatusModal';
@@ -49,29 +51,22 @@ test('saves status updates', async () => {
   expect(onClose).toHaveBeenCalled();
 });
 
-test('sends status update even if unchanged', async () => {
-  const onStatusUpdated = jest.fn();
-  axios.put.mockResolvedValueOnce({
-    data: { user: { id: 'user-1', status: 'Same status' } }
-  });
+test('skips status update when unchanged', async () => {
+  const onClose = jest.fn();
 
   render(
     <StatusModal
       user={{ status: 'Same status' }}
       token="token"
-      onClose={() => {}}
-      onStatusUpdated={onStatusUpdated}
+      onClose={onClose}
+      onStatusUpdated={() => {}}
     />
   );
 
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-  await waitFor(() => expect(axios.put).toHaveBeenCalled());
-  expect(axios.put).toHaveBeenLastCalledWith(
-    'http://localhost:5000/api/auth/status',
-    { status: 'Same status' },
-    { headers: { Authorization: 'Bearer token' } }
-  );
+  await waitFor(() => expect(onClose).toHaveBeenCalled());
+  expect(axios.put).not.toHaveBeenCalled();
 });
 
 test('shows an error when status update fails', async () => {
@@ -86,6 +81,7 @@ test('shows an error when status update fails', async () => {
     />
   );
 
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'New status' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
   expect(await screen.findByText('Update failed')).toBeInTheDocument();
@@ -103,6 +99,7 @@ test('shows fallback error when response lacks message', async () => {
     />
   );
 
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'New status' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
   expect(await screen.findByText('Failed to update status')).toBeInTheDocument();

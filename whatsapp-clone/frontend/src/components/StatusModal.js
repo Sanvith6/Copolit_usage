@@ -3,6 +3,7 @@ import axios from 'axios';
 import './StatusModal.css';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const STATUS_MAX_LENGTH = 140;
 
 export default function StatusModal({ user, token, onClose, onStatusUpdated }) {
   const [status, setStatus] = useState(user?.status || '');
@@ -20,12 +21,19 @@ export default function StatusModal({ user, token, onClose, onStatusUpdated }) {
   }, [onClose]);
 
   const handleSave = async () => {
+    const trimmedStatus = status.trim();
+    const currentStatus = (user?.status || '').trim();
+    if (trimmedStatus === currentStatus) {
+      onClose();
+      return;
+    }
+
     setSaving(true);
     setError('');
     try {
       const res = await axios.put(
         `${API}/auth/status`,
-        { status },
+        { status: trimmedStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const updatedUser = res.data?.user;
@@ -52,11 +60,11 @@ export default function StatusModal({ user, token, onClose, onStatusUpdated }) {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           placeholder="Your status..."
-          maxLength={140}
+          maxLength={STATUS_MAX_LENGTH}
           aria-label="Status message"
         />
         <div className="status-footer">
-          <span className="char-count">{status.length}/140</span>
+          <span className="char-count">{status.length}/{STATUS_MAX_LENGTH}</span>
           <div className="modal-buttons">
             <button type="button" onClick={onClose} disabled={saving}>Cancel</button>
             <button type="button" onClick={handleSave} className="save-btn" disabled={saving}>
